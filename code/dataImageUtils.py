@@ -7,11 +7,10 @@ from sklearn.utils import resample
 
 # global variables
 
-main_bands = [i+1 for i in range(0,7)]
+input_bands = [i+1 for i in range(0,7)]
+nBands = len(input_bands)
 ndvi_band = 9
 labels_band = 8
-input_bands = main_bands
-nBands = len(input_bands)
 downsampleMajority = False
 
 def setGlobalVariables(inputBands, n_Bands, downsample_Majority):
@@ -68,9 +67,12 @@ def loadTrainingImages(images_list):
 
         # make some plots just for the first training image
         if i == 0:
-            if input_bands == ndvi_band: 
-                print('\nFirst training image NDVI band:')
-                peu.plotNVDIBand(features) # plot NDVI band
+            ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+            features_ndvi = removeOuterEdges(features_ndvi)
+            features_ndvi = np.nan_to_num(features_ndvi)
+            print('\nFirst training image NDVI band:')
+            peu.plotNVDIBand(features_ndvi) # plot NDVI band
+
             print('\nFirst training image mangroves from labels: ')
             peu.plotMangroveBand(labels) # plot label (mangrove) band
 
@@ -127,6 +129,9 @@ def loadTrainingImages(images_list):
 # method for predicting on an image with the trained model
 def predictOnImage(model, image):
     '''Take trained model and apply it to a new image.'''
+    
+    print('Predicting for image:', image)
+    
     # read in band data
     ds_features_new, features_new = raster.read(image, bands=input_bands)
     ds_labels_new, labels_new = raster.read(image, bands=labels_band)
@@ -145,9 +150,11 @@ def predictOnImage(model, image):
     # print('Check shapes:', features_new.shape, labels_new.shape)
 
     # plot NDVI band (if using it)
-    if input_bands == ndvi_band: 
-        print('\nNDVI band:')
-        peu.plotNVDIBand(features_new)
+    ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+    features_ndvi = removeOuterEdges(features_ndvi)
+    features_ndvi = np.nan_to_num(features_ndvi)
+    print('\nImage NDVI band:')
+    peu.plotNVDIBand(features_ndvi) # plot NDVI band
 
     # plot Mangrove band
     print('\nLabel mangroves from 2000 data:')
@@ -162,8 +169,7 @@ def predictOnImage(model, image):
     # print('Check transformed shapes:', features_new_input.shape, labels_new_input.shape)
 
     # normalize bands for new image if using the main bands
-    if input_bands == main_bands:
-        features_new_input = normalizeUInt16Band(features_new_input)
+    features_new_input = normalizeUInt16Band(features_new_input)
 
     # predict on new image
     predicted_new_image_prob = model.predict(features_new_input)
