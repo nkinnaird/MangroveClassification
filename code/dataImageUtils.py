@@ -38,6 +38,28 @@ def normalizeUInt16Band(band):
     return band/65535.0
 
 
+def processImage(image):
+
+    # read in band data
+    ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
+    ds_labels, labels = raster.read(image, bands=labels_band)
+
+    # remove outer edges of data (which sometimes have issues)
+    features = removeOuterEdges(features)
+    labels = removeOuterEdges(labels)
+
+    # fill NaNs with 0s
+    features = np.nan_to_num(features)
+    labels = np.nan_to_num(labels)
+
+    # normalize bands - doing this here caused issues with the model fitting for some reason
+    # features = normalizeUInt16Band(features)
+
+    # convert labels to int for classification
+    labels = (labels == 1).astype(int)
+
+
+    return features, labels, ds_labels
 
 # method for loading multiple images as training data (with some portion set aside for testing data with same images)
 def loadTrainingImages(images_list, downsampleMajority):
@@ -48,22 +70,8 @@ def loadTrainingImages(images_list, downsampleMajority):
     training_image_labels = np.empty((0,))
 
     for i, image in enumerate(images_list):
-        # read in band data
-        ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
-        ds_labels, labels = raster.read(image, bands=labels_band)
 
-        # remove outer edges of data (which sometimes have issues)
-        features = removeOuterEdges(features)
-        labels = removeOuterEdges(labels)
-
-        # fill NaNs with 0s
-        features = np.nan_to_num(features)
-        labels = np.nan_to_num(labels)
-        
-#         # normalize bands - doing these here caused issues with the model fitting for some reason
-#         features = normalizeUInt16Band(features)
-
-        # print('Feature shape: ', features.shape)
+        features, labels, _ = processImage(image)
 
         # make some plots just for the first training image
         if i == 0:
@@ -79,11 +87,6 @@ def loadTrainingImages(images_list, downsampleMajority):
         # change dimensions for input into neural net
         features_input = changeDimension(features)
         labels_input = changeDimension(labels)
-        # print(features_input.shape)
-        # print(labels_input.shape)
-
-        # convert labels to int for classification
-        labels_input = (labels_input == 1).astype(int)
 
         # append image inputs together
         training_image_data = np.append(training_image_data, features_input, axis=0)
@@ -133,24 +136,9 @@ def predictOnImage(model, image):
     '''Take trained model and apply it to a new image.'''
     
     print('Predicting for image:', image)
+
+    features_new, labels_new, ds_labels_new = processImage(image)
     
-    # read in band data
-    ds_features_new, features_new = raster.read(image, bands=input_bands)
-    ds_labels_new, labels_new = raster.read(image, bands=labels_band)
-
-    # remove outer edges of data (which sometimes have issues)
-    features_new = removeOuterEdges(features_new)
-    labels_new = removeOuterEdges(labels_new)
-
-    # fill NaNs with 0s
-    features_new = np.nan_to_num(features_new)
-    labels_new = np.nan_to_num(labels_new)
-
-    # change label from float to int
-    labels_new = (labels_new == 1).astype(int)
-
-    # print('Check shapes:', features_new.shape, labels_new.shape)
-
     # plot NDVI band (if using it)
     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
     features_ndvi = removeOuterEdges(features_ndvi)
@@ -168,7 +156,6 @@ def predictOnImage(model, image):
 
     # reshape it as an additional step for input into the NN
     features_new_1D = features_new_1D.reshape((features_new_1D.shape[0], 1, nBands))
-    # print('Check transformed shapes:', features_new_1D.shape, labels_new_1D.shape)
 
     # normalize bands for new image
     features_new_1D = normalizeUInt16Band(features_new_1D)
@@ -215,8 +202,7 @@ def processImageCNN(image, kSize):
     # normalize bands
     features = normalizeUInt16Band(features)
     
-    # change the dimensions of the labels array
-    # labels = changeDimension(labels) # moved back outside this method for plotting reasons
+    # turn labels to ints
     labels = (labels == 1).astype(int)
 
     # get dimensions for creating 7x7 feature arrays
@@ -316,7 +302,6 @@ def predictOnImageCNN(model, image, kSize):
     print('Predicting for image:', image)
 
     features_new, labels_new, ds_labels_new = processImageCNN(image, kSize)
-
 
     # plot NDVI band
     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
