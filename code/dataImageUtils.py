@@ -5,7 +5,6 @@ from pyrsgis.convert import changeDimension
 from sklearn.utils import resample
 import math
 
-
 # global variables
 
 input_bands = [i+1 for i in range(0,7)]
@@ -61,10 +60,8 @@ def loadTrainingImages(images_list, downsampleMajority):
         features = np.nan_to_num(features)
         labels = np.nan_to_num(labels)
         
-#         # normalize bands
-#         print('normalizing features before: ', features[0][0])
+#         # normalize bands - doing these here caused issues with the model fitting for some reason
 #         features = normalizeUInt16Band(features)
-#         print('normalizing features after: ', features[0][0])
 
         # print('Feature shape: ', features.shape)
 
@@ -166,24 +163,24 @@ def predictOnImage(model, image):
     peu.plotMangroveBand(labels_new)
 
     # change dimensions of input
-    features_new_input = changeDimension(features_new)
-    labels_new_input = changeDimension(labels_new)
+    features_new_1D = changeDimension(features_new)
+    labels_new_1D = changeDimension(labels_new)
 
     # reshape it as an additional step for input into the NN
-    features_new_input = features_new_input.reshape((features_new_input.shape[0], 1, nBands))
-    # print('Check transformed shapes:', features_new_input.shape, labels_new_input.shape)
+    features_new_1D = features_new_1D.reshape((features_new_1D.shape[0], 1, nBands))
+    # print('Check transformed shapes:', features_new_1D.shape, labels_new_1D.shape)
 
     # normalize bands for new image
-    features_new_input = normalizeUInt16Band(features_new_input)
+    features_new_1D = normalizeUInt16Band(features_new_1D)
 
     # predict on new image
-    predicted_new_image_prob = model.predict(features_new_input)
+    predicted_new_image_prob = model.predict(features_new_1D)
     predicted_new_image_prob = predicted_new_image_prob[:,1]
 
     # print classification metrics
     probThresh = 0.5
-    peu.printClassificationMetrics(labels_new_input, predicted_new_image_prob, probThresh)
-    peu.makeROCPlot(labels_new_input, predicted_new_image_prob)
+    peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
+    peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
 
     # reshape prediction into 2D for plotting
     predicted_new_image_aboveThresh = (predicted_new_image_prob > probThresh).astype(int)
@@ -198,36 +195,65 @@ def predictOnImage(model, image):
     peu.plotDifference(labels_new, prediction_new_image_2d)
 
     
+
+def processImageCNN(image, kSize):
+
+    margin = math.floor(kSize/2)
+
+    # read in band data
+    ds_features, features = raster.read(image, bands=input_bands)
+    ds_labels, labels = raster.read(image, bands=labels_band)
+
+    # remove outer edges of data (which sometimes have issues)
+    features = removeOuterEdges(features)
+    labels = removeOuterEdges(labels)
+
+    # fill NaNs with 0s
+    features = np.nan_to_num(features)
+    labels = np.nan_to_num(labels)
+
+    # normalize bands
+    features = normalizeUInt16Band(features)
     
+    # change the dimensions of the labels array
+    # labels = changeDimension(labels) # moved back outside this method for plotting reasons
+    labels = (labels == 1).astype(int)
+
+    # get dimensions for creating 7x7 feature arrays
+    _, rows, cols = features.shape
+    features = np.pad(features, margin, mode='constant')[margin:-margin, :, :]
+
+    # init empty array for filling with the proper shape for input into the CNN
+    features_shaped = np.empty((rows*cols, kSize, kSize, nBands))            
+  
+    n = 0
+    for row in range(margin, rows+margin):
+        for col in range(margin, cols+margin):
+            feat = features[:, row-margin:row+margin+1, col-margin:col+margin+1]
+
+            b1, b2, b3, b4, b5, b6, b7 = feat # this is hardcoded at the moment which isn't great
+            feat = np.dstack((b1, b2, b3, b4, b5, b6, b7))
+
+            features_shaped[n, :, :, :] = feat
+            n += 1     
+
+
+    return features_shaped, labels, ds_labels
     
+
+
 # # method for loading multiple images as training data (with some portion set aside for testing data with same images)
 def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
     '''Load images from list as training data, separately process each image and produce image chips.'''
     
-    margin = math.floor(kSize/2)
-
     # initialize empty arrays which will concatenate data from all training images
     training_image_data = np.empty((0, kSize, kSize, nBands))
     training_image_labels = np.empty((0,))
 
     for i, image in enumerate(images_list):
-        # read in band data
-        ds_features, features = raster.read(image, bands=input_bands)
-        ds_labels, labels = raster.read(image, bands=labels_band)
 
-        # remove outer edges of data (which sometimes have issues)
-        features = removeOuterEdges(features)
-        labels = removeOuterEdges(labels)
+        features, labels, _ = processImageCNN(image, kSize)
 
-        # fill NaNs with 0s
-        features = np.nan_to_num(features)
-        labels = np.nan_to_num(labels)
-
-        # print('Feature shape: ', features.shape)
-        
-        # normalize bands
-        features = normalizeUInt16Band(features)
-        
         # make some plots just for the first training image
         if i == 0:
             ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
@@ -239,31 +265,12 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
             print('\nFirst training image mangroves from labels: ')
             peu.plotMangroveBand(labels) # plot label (mangrove) band
 
-            
-        _, rows, cols = features.shape
 
-        features = np.pad(features, margin, mode='constant')[margin:-margin, :, :]
-    
-        features_training = np.empty((rows*cols, kSize, kSize, nBands))            
-            
-        n = 0
-        for row in range(margin, rows+margin):
-            for col in range(margin, cols+margin):
-                feat = features[:, row-margin:row+margin+1, col-margin:col+margin+1]
-
-                b1, b2, b3, b4, b5, b6, b7 = feat # this is hardcoded at the moment which isn't great
-                feat = np.dstack((b1, b2, b3, b4, b5, b6, b7))
-
-                features_training[n, :, :, :] = feat
-                n += 1          
-
-            
+        # change dimension of labels array
         labels = changeDimension(labels)    
-        labels = (labels == 1).astype(int)
     
-
         # append image inputs together
-        training_image_data = np.append(training_image_data, features_training, axis=0)
+        training_image_data = np.append(training_image_data, features, axis=0)
         training_image_labels = np.append(training_image_labels, labels, axis=0)
 
         # end for loop
@@ -307,30 +314,11 @@ def predictOnImageCNN(model, image, kSize):
     '''Take trained CNN model and apply it to a new image.'''
     
     print('Predicting for image:', image)
-    
-    margin = math.floor(kSize/2)
-    
-    ds_features_new, features_new = raster.read(image, bands=input_bands)
-    ds_labels_new, labels_new = raster.read(image, bands=labels_band)
 
-    # remove outer edges of data (which sometimes have issues)
-    features_new = removeOuterEdges(features_new)
-    labels_new = removeOuterEdges(labels_new)
+    features_new, labels_new, ds_labels_new = processImageCNN(image, kSize)
 
-    # fill NaNs with 0s
-    features_new = np.nan_to_num(features_new)
-    labels_new = np.nan_to_num(labels_new)
 
-    # print('Feature shape: ', features.shape)
-
-    # normalize bands
-    features_new = normalizeUInt16Band(features_new)
-
-    # change label from float to int
-    labels_new = (labels_new == 1).astype(int)
-    
-    
-    # plot NDVI band (if using it)
+    # plot NDVI band
     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
     features_ndvi = removeOuterEdges(features_ndvi)
     features_ndvi = np.nan_to_num(features_ndvi)
@@ -341,45 +329,17 @@ def predictOnImageCNN(model, image, kSize):
     print('\nLabel mangroves from 2000 data:')
     peu.plotMangroveBand(labels_new)
     
-    
-
-
-    _, rows, cols = features_new.shape
-
-    features_new = np.pad(features_new, margin, mode='constant')[margin:-margin, :, :]
-
-    features_new_reshaped = np.empty((rows*cols, kSize, kSize, nBands))            
-
-    n = 0
-    for row in range(margin, rows+margin):
-        for col in range(margin, cols+margin):
-            feat = features_new[:, row-margin:row+margin+1, col-margin:col+margin+1]
-
-            b1, b2, b3, b4, b5, b6, b7 = feat # this is hardcoded at the moment which isn't great
-            feat = np.dstack((b1, b2, b3, b4, b5, b6, b7))
-
-            features_new_reshaped[n, :, :, :] = feat
-            n += 1        
-    
-    
-    
-    
-    
-
-    # change dimensions of input
-    labels_new_input = changeDimension(labels_new)
-
-
-
+    # change dimension of labels array
+    labels_new_1D = changeDimension(labels_new)
     
     # predict on new image
-    predicted_new_image_prob = model.predict(features_new_reshaped)
+    predicted_new_image_prob = model.predict(features_new)
     predicted_new_image_prob = predicted_new_image_prob[:,1]
 
     # print classification metrics
     probThresh = 0.5
-    peu.printClassificationMetrics(labels_new_input, predicted_new_image_prob, probThresh)
-    peu.makeROCPlot(labels_new_input, predicted_new_image_prob)
+    peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
+    peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
 
     # reshape prediction into 2D for plotting
     predicted_new_image_aboveThresh = (predicted_new_image_prob > probThresh).astype(int)
