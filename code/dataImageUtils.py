@@ -216,10 +216,12 @@ def processImageCNN(image, kSize, stride):
     
     
     # init empty array for filling with the proper shape for input into the CNN
-        # something not quite right with the current implementation, hence the if statements and exception raising, but it does work for odd strides so just roll with it for now
+        # something not quite right with the current implementation, hence the if statements and exception raising
+        # works for odd and even strides in some instances but not all
     if stride == 1: features_shaped = np.empty((rows*cols, kSize, kSize, nBands))
-    elif stride % 2 == 1: features_shaped = np.empty((int((rows+margin)/stride)*int((cols+margin)/stride), kSize, kSize, nBands))
-    else: raise Exception("Stride cannot be even with the current implementation.")
+#     elif stride % 2 == 1: features_shaped = np.empty((int((rows+margin)/stride)*int((cols+margin)/stride), kSize, kSize, nBands))
+#     else: raise Exception("Stride cannot be even with the current implementation.")
+    else: raise Exception("Stride cannot be a number different than 1 with the current implementation.")
     
     n = 0
     for row in range(margin, rows+margin, stride):    
