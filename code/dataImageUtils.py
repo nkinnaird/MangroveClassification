@@ -183,14 +183,14 @@ def predictOnImage(model, image):
 
     
 
-def processImageCNN(image, kSize):
+def processImageCNN(image, kSize, stride):
 
     margin = math.floor(kSize/2)
 
     # read in band data
     ds_features, features = raster.read(image, bands=input_bands)
     ds_labels, labels = raster.read(image, bands=labels_band)
-
+    
     # remove outer edges of data (which sometimes have issues)
     features = removeOuterEdges(features)
     labels = removeOuterEdges(labels)
@@ -204,32 +204,41 @@ def processImageCNN(image, kSize):
     
     # turn labels to ints
     labels = (labels == 1).astype(int)
-
+          
     # get dimensions for creating 7x7 feature arrays
     _, rows, cols = features.shape
     features = np.pad(features, margin, mode='constant')[margin:-margin, :, :]
-
+    
+    
+    # perhaps can somehow use these shapes to get number of points for final features vector (but still doesn't work for stride=1 or stride=2)
+#     fill_rows = int((features.shape[1]-margin)/stride)
+#     fill_cols = int((features.shape[2]-margin)/stride)
+    
+    
     # init empty array for filling with the proper shape for input into the CNN
-    features_shaped = np.empty((rows*cols, kSize, kSize, nBands))            
-  
+        # something not quite right with the current implementation, hence the if statements and exception raising, but it does work for odd strides so just roll with it for now
+    if stride == 1: features_shaped = np.empty((rows*cols, kSize, kSize, nBands))
+    elif stride % 2 == 1: features_shaped = np.empty((int((rows+margin)/stride)*int((cols+margin)/stride), kSize, kSize, nBands))
+    else: raise Exception("Stride cannot be even with the current implementation.")
+    
     n = 0
-    for row in range(margin, rows+margin):
-        for col in range(margin, cols+margin):
+    for row in range(margin, rows+margin, stride):    
+        for col in range(margin, cols+margin, stride):            
             feat = features[:, row-margin:row+margin+1, col-margin:col+margin+1]
 
             b1, b2, b3, b4, b5, b6, b7 = feat # this is hardcoded at the moment which isn't great
             feat = np.dstack((b1, b2, b3, b4, b5, b6, b7))
 
             features_shaped[n, :, :, :] = feat
-            n += 1     
-
-
+            n += 1
+        
+        
     return features_shaped, labels, ds_labels
     
 
 
 # # method for loading multiple images as training data (with some portion set aside for testing data with same images)
-def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
+def loadTrainingImagesCNN(images_list, downsampleMajority, kSize, stride):
     '''Load images from list as training data, separately process each image and produce image chips.'''
     
     # initialize empty arrays which will concatenate data from all training images
@@ -237,8 +246,10 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
     training_image_labels = np.empty((0,))
 
     for i, image in enumerate(images_list):
+        
+        print('Processing image: ', i)
 
-        features, labels, _ = processImageCNN(image, kSize)
+        features, labels, _ = processImageCNN(image, kSize, stride)
 
         # make some plots just for the first training image
         if i == 0:
@@ -251,10 +262,13 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
             print('\nFirst training image mangroves from labels: ')
             peu.plotMangroveBand(labels) # plot label (mangrove) band
 
+            
+        # apply stride to labels
+        labels = labels[::stride,::stride]
 
         # change dimension of labels array
-        labels = changeDimension(labels)    
-    
+        labels = changeDimension(labels)  
+            
         # append image inputs together
         training_image_data = np.append(training_image_data, features, axis=0)
         training_image_labels = np.append(training_image_labels, labels, axis=0)
@@ -278,21 +292,21 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize):
 
         # recombine features and labels
 
-        features = np.concatenate((mangrove_features, non_mangrove_features), axis=0)
-        labels = np.concatenate((mangrove_labels, non_mangrove_labels), axis=0)
+        final_features = np.concatenate((mangrove_features, non_mangrove_features), axis=0)
+        final_labels = np.concatenate((mangrove_labels, non_mangrove_labels), axis=0)
 
     else:
 
-        features = training_image_data
-        labels = training_image_labels
+        final_features = training_image_data
+        final_labels = training_image_labels
 
     # check balance of classes
-    training_data_length = len(features)
+    training_data_length = len(final_features)
     print('Using training data of length: ', training_data_length)
-    print(f"Class 0: {np.count_nonzero(labels==0)} Class 1: {np.count_nonzero(labels==1)}")
-    print(f"Class 0: {100 * np.count_nonzero(labels==0)/training_data_length : .1f}% Class 1: {100 * np.count_nonzero(labels==1)/training_data_length : .1f}%")
+    print(f"Class 0: {np.count_nonzero(final_labels==0)} Class 1: {np.count_nonzero(final_labels==1)}")
+    print(f"Class 0: {100 * np.count_nonzero(final_labels==0)/training_data_length : .1f}% Class 1: {100 * np.count_nonzero(final_labels==1)/training_data_length : .1f}%")
 
-    return features, labels
+    return final_features, final_labels
 
 
 
@@ -301,7 +315,7 @@ def predictOnImageCNN(model, image, kSize):
     
     print('Predicting for image:', image)
 
-    features_new, labels_new, ds_labels_new = processImageCNN(image, kSize)
+    features_new, labels_new, ds_labels_new = processImageCNN(image, kSize, 1)
 
     # plot NDVI band
     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
