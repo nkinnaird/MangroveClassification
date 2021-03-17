@@ -58,6 +58,8 @@ def printClassificationMetrics(y_actual, y_predicted_prob, input_prob=0.5):
     print('f1: %.3f' % (f1Score))
 
     print(classification_report(y_actual, y_predicted))
+    
+    return f1Score
 
 def makeROCPlot(y_actual, y_predicted_prob):
     fpr, tpr, thresholds = roc_curve(y_actual, y_predicted_prob)
@@ -71,3 +73,5 @@ def makeROCPlot(y_actual, y_predicted_prob):
     plt.title('ROC curve')
     plt.legend(loc='best')
     plt.show()
+    
+    return auc_score
