@@ -146,11 +146,11 @@ def predictOnImage(model, image):
     features_ndvi = removeOuterEdges(features_ndvi)
     features_ndvi = np.nan_to_num(features_ndvi)
     print(f'\nImage {year} NDVI band:')
-    peu.plotNVDIBand(features_ndvi, name, year) # plot NDVI band
+    peu.plotNVDIBand(features_ndvi, name, year, "BasicNN") # plot NDVI band
 
     # plot labeled Mangrove band
     print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new, name, 2000, False)
+    peu.plotMangroveBand(labels_new, name, 2000, False, "BasicNN")
 
     # change dimensions of input
     features_new_1D = changeDimension(features_new)
@@ -175,17 +175,17 @@ def predictOnImage(model, image):
 
     # plot predicted mangroves
     print('\nPredicted mangroves:')
-    peu.plotMangroveBand(prediction_new_image_2d, name, year, True)
+    peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "BasicNN")
 
     # plot difference in predicted and labeled, or future vs past labeled
     if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
     else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
-    peu.plotDifference(labels_new, prediction_new_image_2d, name, year)
+    peu.plotDifference(labels_new, prediction_new_image_2d, name, year, "BasicNN")
 
     # print classification metrics
     if year == 2000:
         peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
-        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
+        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "BasicNN")
     
 
 def processImageCNN(image, kSize, stride):
@@ -331,11 +331,11 @@ def predictOnImageCNN(model, image, kSize):
     features_ndvi = removeOuterEdges(features_ndvi)
     features_ndvi = np.nan_to_num(features_ndvi)
     print(f'\nImage {year} NDVI band:')
-    peu.plotNVDIBand(features_ndvi, name, year) # plot NDVI band
+    peu.plotNVDIBand(features_ndvi, name, year, "CNN") # plot NDVI band
 
     # plot labeled Mangrove band
     print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new, 2000, False)
+    peu.plotMangroveBand(labels_new, 2000, False, "CNN")
         
     # change dimension of labels array
     labels_new_1D = changeDimension(labels_new)
@@ -353,15 +353,15 @@ def predictOnImageCNN(model, image, kSize):
     
     # plot predicted mangroves
     print('\nPredicted mangroves:')
-    peu.plotMangroveBand(prediction_new_image_2d, name, year, True)
+    peu.plotMangroveBand(prediction_new_image_2d, name, year, True, "CNN")
 
     # plot difference in predicted and labeled, or future vs past labeled
     if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
     else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
-    peu.plotDifference(labels_new, prediction_new_image_2d, name, year)
+    peu.plotDifference(labels_new, prediction_new_image_2d, name, year, "CNN")
 
     # print classification metrics
     if year == 2000:
         peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
-        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
+        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob, name, year, "CNN")
     

@@ -36,25 +36,34 @@ fn_patch_pred = mpatches.Patch(color='red', label='False Negative')
 fp_patch_pred = mpatches.Patch(color='olivedrab', label='False Positive')
 
 
-def plotNVDIBand(input_data, name, year):
+def plotNVDIBand(input_data, name, year, modelFolder):
     plt.figure()
     plt.imshow(input_data, cmap='RdYlGn', vmin=-1, vmax=1)
-#     plt.colorbar()
     plt.title("NDVI for " + name + " in " + str(year))
-#     plt.legend()
-#     plt.savefig(f'Images/col{i}_corr.png', bbox_inches='tight')
+
+    image_path = f"SavedPlots/{modelFolder}/{name}/NDVI_{name}_{year}.png"
+    print("Saving image: ", image_path)
+    plt.savefig(image_path, bbox_inches='tight')
+    
     plt.show()
 
-def plotMangroveBand(input_data, name, year, predicted):
+def plotMangroveBand(input_data, name, year, predicted, modelFolder):
     plt.figure()
     plt.imshow(input_data, cmap=discrete_cmap, vmin=vmin, vmax=vmax)
     if not predicted: plt.title("Labeled Mangroves for " + name + " in " + str(year))
     else: plt.title("Predicted Mangroves for " + name + " in " + str(year))
     # plt.colorbar()
     plt.legend(handles=[mangrove_patch, non_mangrove_patch])
+    
+    if not predicted: image_path = f"SavedPlots/{modelFolder}/{name}/LabeledMangroves_{name}_{year}.png"
+    else: image_path = f"SavedPlots/{modelFolder}/{name}/PredictedMangroves_{name}_{year}.png"
+    
+    print("Saving image: ", image_path)
+    plt.savefig(image_path, bbox_inches='tight')   
+    
     plt.show()
 
-def plotDifference(labels_data, predicted_data, name, year):
+def plotDifference(labels_data, predicted_data, name, year, modelFolder):
     '''
     Plot difference in predicted (or future predicted) mangroves and labeled (past) mangroves.
     # multiply first array by 2 in order to get 4 values for difference plot:
@@ -75,6 +84,14 @@ def plotDifference(labels_data, predicted_data, name, year):
     else: 
         plt.title("Change in Mangroves for " + name + " in " + str(year) + " vs 2000")
         plt.legend(handles=[mangrove_patch_pred, non_mangrove_patch_pred, growth_patch_pred, loss_patch_pred])
+        
+        
+    if year == 2000: image_path = f"SavedPlots/{modelFolder}/{name}/PvA_{name}_{year}.png"
+    else: image_path = f"SavedPlots/{modelFolder}/{name}/GaL_{name}_{year}.png"
+    
+    print("Saving image: ", image_path)
+    plt.savefig(image_path, bbox_inches='tight')   
+        
     plt.show()
     
     
@@ -99,7 +116,7 @@ def printClassificationMetrics(y_actual, y_predicted_prob, input_prob=0.5):
     
     return f1Score
 
-def makeROCPlot(y_actual, y_predicted_prob):
+def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder):
     fpr, tpr, thresholds = roc_curve(y_actual, y_predicted_prob)
     auc_score = auc(fpr, tpr)
 
@@ -110,6 +127,11 @@ def makeROCPlot(y_actual, y_predicted_prob):
     plt.ylabel('True positive rate')
     plt.title('ROC curve')
     plt.legend(loc='best')
+    
+    image_path = f"SavedPlots/{modelFolder}/{name}/ROC_{name}_{year}.png"
+    print("Saving image: ", image_path)
+    plt.savefig(image_path, bbox_inches='tight')    
+    
     plt.show()
     
     return auc_score
