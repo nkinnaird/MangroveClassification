@@ -4,7 +4,7 @@ var l7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR');
 // define dictionary for name and image center info
 
 // Florida Images
-// var dict = {"Name": "Florida_1", "centerPoint": [-80.90, 25.14]};
+var dict = {"Name": "Florida_1", "centerPoint": [-80.90, 25.14]};
 // var dict = {"Name": "Florida_2", "centerPoint": [-81.54, 24.66]};
 // var dict = {"Name": "Florida_3", "centerPoint": [-80.36, 25.26]};
 // var dict = {"Name": "Florida_4", "centerPoint": [-81.03, 25.40]};
@@ -16,7 +16,7 @@ var l7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR');
 // var dict = {"Name": "Cuba_1", "centerPoint": [-81.83, 22.34]};
 // var dict = {"Name": "Cuba_2", "centerPoint": [-81.03, 23.07]};
 // var dict = {"Name": "Cuba_3", "centerPoint": [-80.03, 22.95]};
-var dict = {"Name": "Cuba_4", "centerPoint": [-78.56, 22.21]};
+// var dict = {"Name": "Cuba_4", "centerPoint": [-78.56, 22.21]};
 
 
 // Turks and Caicos
@@ -127,6 +127,68 @@ Export.image.toDrive({
 });
 
 
+// load the base T1 collection for producing an RGB image with a simple composite
+var l7_T1 = ee.ImageCollection('LANDSAT/LE07/C01/T1');
+
+// create simple composites
+var rgb_composite_2000 = ee.Algorithms.Landsat.simpleComposite({
+  collection: l7_T1.filterBounds(rectangle).filterDate('2000-01-01', '2000-12-31'),
+  asFloat: true}).clip(rectangle);
+print('rgb_composite_2000', rgb_composite_2000)
+
+var rgb_composite_2020 = ee.Algorithms.Landsat.simpleComposite({
+  collection: l7_T1.filterBounds(rectangle).filterDate('2020-01-01', '2020-12-31'),
+  asFloat: true}).clip(rectangle);
+print('rgb_composite_2020', rgb_composite_2020)
+
+// Export simple composite 2000 image
+Export.image.toDrive({
+  image: rgb_composite_2000,
+  description: dict.Name.concat('_2000_simple_composite'),
+  scale: 30,
+  region: rgb_composite_2000.geometry().bounds(), // .geometry().bounds() needed for multipolygon
+  folder: 'MangroveClassification',
+  maxPixels: 2e9
+});
+
+// Export simple composite 2020 image
+Export.image.toDrive({
+  image: rgb_composite_2020,
+  description: dict.Name.concat('_2020_simple_composite'),
+  scale: 30,
+  region: rgb_composite_2020.geometry().bounds(), // .geometry().bounds() needed for multipolygon
+  folder: 'MangroveClassification',
+  maxPixels: 2e9
+});
+
+
+
+// Visualize RGB images
+var newVisParams = {bands: ['B3','B2','B1'], min: 0, max: 0.2, gamma: [1, 1, 1]}
+Map.addLayer(rgb_composite_2000, newVisParams, 'rgb_2000_simplecomposite', false);
+Map.addLayer(rgb_composite_2020, newVisParams, 'rgb_2020_simplecomposite', false);
+
+// do the same with Landsat 8 data for 2020 to get a nicer image
+var l8_T1 = ee.ImageCollection('LANDSAT/LC08/C01/T1');
+
+var l8_rgb_composite_2020 = ee.Algorithms.Landsat.simpleComposite({
+  collection: l8_T1.filterBounds(rectangle).filterDate('2020-01-01', '2020-12-31'),
+  asFloat: true}).clip(rectangle);
+print('l8_rgb_composite_2020', l8_rgb_composite_2020)
+
+var l8VisParams = {bands: ['B4','B3','B2'], min: 0, max: 0.2, gamma: [1, 1, 1]}
+Map.addLayer(l8_rgb_composite_2020, l8VisParams, 'l8_rgb_composite_2020', false);
+
+
+// Export Landsat 8 simple composite 2020 image
+Export.image.toDrive({
+  image: l8_rgb_composite_2020,
+  description: dict.Name.concat('_2020_L8_simple_composite'),
+  scale: 30,
+  region: l8_rgb_composite_2020.geometry().bounds(), // .geometry().bounds() needed for multipolygon
+  folder: 'MangroveClassification',
+  maxPixels: 2e9
+});
 
 
 
