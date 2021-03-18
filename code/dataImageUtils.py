@@ -135,7 +135,9 @@ def loadTrainingImages(images_list, downsampleMajority):
 def predictOnImage(model, image):
     '''Take trained model and apply it to a new image.'''
     
-    print('Predicting for image:', image)
+    print('\n\nPredicting for image:', image)
+    name = image.split("/")[-1].split(".")[0][:-5]
+    year = int(image.split("/")[-1].split("_")[2].split(".")[0])
 
     features_new, labels_new, ds_labels_new = processImage(image)
     
@@ -143,12 +145,12 @@ def predictOnImage(model, image):
     ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
     features_ndvi = removeOuterEdges(features_ndvi)
     features_ndvi = np.nan_to_num(features_ndvi)
-    print('\nImage NDVI band:')
-    peu.plotNVDIBand(features_ndvi) # plot NDVI band
+    print(f'\nImage {year} NDVI band:')
+    peu.plotNVDIBand(features_ndvi, name, year) # plot NDVI band
 
-    # plot Mangrove band
-    print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new)
+    # plot labeled Mangrove band
+    print(f'\nLabel mangroves from {year} data:')
+    peu.plotMangroveBand(labels_new, name, 2000, False)
 
     # change dimensions of input
     features_new_1D = changeDimension(features_new)
@@ -164,23 +166,26 @@ def predictOnImage(model, image):
     predicted_new_image_prob = model.predict(features_new_1D)
     predicted_new_image_prob = predicted_new_image_prob[:,1]
 
-    # print classification metrics
+    # set probability threshold 
     probThresh = 0.5
-    peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
-    peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
-
+    
     # reshape prediction into 2D for plotting
     predicted_new_image_aboveThresh = (predicted_new_image_prob > probThresh).astype(int)
     prediction_new_image_2d = np.reshape(predicted_new_image_aboveThresh, (ds_labels_new.RasterYSize-2, ds_labels_new.RasterXSize-2)) # need the -2s since I removed the outer edges
 
     # plot predicted mangroves
     print('\nPredicted mangroves:')
-    peu.plotMangroveBand(prediction_new_image_2d)
+    peu.plotMangroveBand(prediction_new_image_2d, name, year, True)
 
     # plot difference in predicted and labeled, or future vs past labeled
-    print('\nDifference between predicted and labeled mangroves:')
-    peu.plotDifference(labels_new, prediction_new_image_2d)
+    if year > 2000: print(f'\nDifference between {year} predicted and 2000 labeled mangroves:')
+    else: print('\nDifference between predicted and labeled mangroves from the year 2000:')
+    peu.plotDifference(labels_new, prediction_new_image_2d, name, year)
 
+    # print classification metrics
+    if year == 2000:
+        peu.printClassificationMetrics(labels_new_1D, predicted_new_image_prob, probThresh)
+        peu.makeROCPlot(labels_new_1D, predicted_new_image_prob)
     
 
 def processImageCNN(image, kSize, stride):
@@ -315,7 +320,7 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize, stride):
 def predictOnImageCNN(model, image, kSize):
     '''Take trained CNN model and apply it to a new image.'''
     
-    print('Predicting for image:', image)
+    print('\n\nPredicting for image:', image)
 
     features_new, labels_new, ds_labels_new = processImageCNN(image, kSize, 1)
 
