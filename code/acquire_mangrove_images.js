@@ -9,9 +9,21 @@ var l7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR');
 // var dict = {"Name": "Florida_3", "centerPoint": [-80.36, 25.26]};
 // var dict = {"Name": "Florida_4", "centerPoint": [-81.03, 25.40]};
 // var dict = {"Name": "Florida_5", "centerPoint": [-81.13, 25.58]};
+// var dict = {"Name": "Florida_6", "centerPoint": [-81.26, 25.74]};
+// var dict = {"Name": "Florida_7", "centerPoint": [-81.50, 25.90]};
+
+// Cuba
+// var dict = {"Name": "Cuba_1", "centerPoint": [-81.83, 22.34]};
+// var dict = {"Name": "Cuba_2", "centerPoint": [-81.03, 23.07]};
+// var dict = {"Name": "Cuba_3", "centerPoint": [-80.03, 22.95]};
+var dict = {"Name": "Cuba_4", "centerPoint": [-78.56, 22.21]};
+
+
+// Turks and Caicos
+// var dict = {"Name": "TurksAndCaicos_1", "centerPoint": [-71.84, 21.76]};
 
 // Brazil
-var dict = {"Name": "Brazil_1", "centerPoint": [-43.63, -2.50]};
+// var dict = {"Name": "Brazil_1", "centerPoint": [-43.63, -2.50]};
 // var dict = {"Name": "Brazil_2", "centerPoint": [-50.06, 1.67]};
 // var dict = {"Name": "Brazil_3", "centerPoint": [-50.17, 0.83]};
 // var dict = {"Name": "Brazil_4", "centerPoint": [-45.87, -1.15]};
