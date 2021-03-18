@@ -74,15 +74,15 @@ def loadTrainingImages(images_list, downsampleMajority):
         features, labels, _ = processImage(image)
 
         # make some plots just for the first training image
-        if i == 0:
-            ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
-            features_ndvi = removeOuterEdges(features_ndvi)
-            features_ndvi = np.nan_to_num(features_ndvi)
-            print('\nFirst training image NDVI band:')
-            peu.plotNVDIBand(features_ndvi) # plot NDVI band
+#         if i == 0:
+#             ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+#             features_ndvi = removeOuterEdges(features_ndvi)
+#             features_ndvi = np.nan_to_num(features_ndvi)
+#             print('\nFirst training image NDVI band:')
+#             peu.plotNVDIBand(features_ndvi) # plot NDVI band
 
-            print('\nFirst training image mangroves from labels: ')
-            peu.plotMangroveBand(labels) # plot label (mangrove) band
+#             print('\nFirst training image mangroves from labels: ')
+#             peu.plotMangroveBand(labels) # plot label (mangrove) band
 
         # change dimensions for input into neural net
         features_input = changeDimension(features)
@@ -259,15 +259,15 @@ def loadTrainingImagesCNN(images_list, downsampleMajority, kSize, stride):
         features, labels, _ = processImageCNN(image, kSize, stride)
 
         # make some plots just for the first training image
-        if i == 0:
-            ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
-            features_ndvi = removeOuterEdges(features_ndvi)
-            features_ndvi = np.nan_to_num(features_ndvi)
-            print('\nFirst training image NDVI band:')
-            peu.plotNVDIBand(features_ndvi) # plot NDVI band
+#         if i == 0:
+#             ds_ndvi, features_ndvi = raster.read(image, bands=ndvi_band)
+#             features_ndvi = removeOuterEdges(features_ndvi)
+#             features_ndvi = np.nan_to_num(features_ndvi)
+#             print('\nFirst training image NDVI band:')
+#             peu.plotNVDIBand(features_ndvi) # plot NDVI band
 
-            print('\nFirst training image mangroves from labels: ')
-            peu.plotMangroveBand(labels) # plot label (mangrove) band
+#             print('\nFirst training image mangroves from labels: ')
+#             peu.plotMangroveBand(labels) # plot label (mangrove) band
 
             
         # apply stride to labels
