@@ -335,7 +335,7 @@ def predictOnImageCNN(model, image, kSize):
 
     # plot labeled Mangrove band
     print('\nLabel mangroves from 2000 data:')
-    peu.plotMangroveBand(labels_new, 2000, False, "CNN")
+    peu.plotMangroveBand(labels_new, name, 2000, False, "CNN")
         
     # change dimension of labels array
     labels_new_1D = changeDimension(labels_new)
