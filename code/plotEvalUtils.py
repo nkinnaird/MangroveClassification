@@ -11,7 +11,8 @@ params = {'figure.figsize': (20, 5),
           'axes.labelsize': 'x-large',
           'axes.titlesize': 'x-large',
           'xtick.labelsize': 'x-large',
-          'ytick.labelsize': 'x-large'}
+          'ytick.labelsize': 'x-large',
+          'legend.framealpha': 1}
 pylab.rcParams.update(params)
 
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score, f1_score, classification_report, roc_curve, auc
@@ -40,6 +41,10 @@ def plotNVDIBand(input_data, name, year, modelFolder):
     plt.figure()
     plt.imshow(input_data, cmap='RdYlGn', vmin=-1, vmax=1)
     plt.title("NDVI for " + name + " in " + str(year))
+    
+    ax = plt.gca()
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
 
     image_path = f"SavedPlots/{modelFolder}/{name}/NDVI_{name}_{year}.png"
     print("Saving image: ", image_path)
@@ -54,6 +59,10 @@ def plotMangroveBand(input_data, name, year, predicted, modelFolder):
     else: plt.title("Predicted Mangroves for " + name + " in " + str(year))
     # plt.colorbar()
     plt.legend(handles=[mangrove_patch, non_mangrove_patch])
+    
+    ax = plt.gca()
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
     
     if not predicted: image_path = f"SavedPlots/{modelFolder}/{name}/LabeledMangroves_{name}_{year}.png"
     else: image_path = f"SavedPlots/{modelFolder}/{name}/PredictedMangroves_{name}_{year}.png"
@@ -85,6 +94,9 @@ def plotDifference(labels_data, predicted_data, name, year, modelFolder):
         plt.title("Change in Mangroves for " + name + " in " + str(year) + " vs 2000")
         plt.legend(handles=[mangrove_patch_pred, non_mangrove_patch_pred, growth_patch_pred, loss_patch_pred])
         
+    ax = plt.gca()
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
         
     if year == 2000: image_path = f"SavedPlots/{modelFolder}/{name}/PvA_{name}_{year}.png"
     else: image_path = f"SavedPlots/{modelFolder}/{name}/GaL_{name}_{year}.png"
