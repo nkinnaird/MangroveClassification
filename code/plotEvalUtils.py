@@ -128,7 +128,7 @@ def printClassificationMetrics(y_actual, y_predicted_prob, input_prob=0.5):
     
     return f1Score
 
-def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder):
+def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder, saveImage=True):
     fpr, tpr, thresholds = roc_curve(y_actual, y_predicted_prob)
     auc_score = auc(fpr, tpr)
 
@@ -140,9 +140,10 @@ def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder):
     plt.title('ROC curve')
     plt.legend(loc='best')
     
-    image_path = f"SavedPlots/{modelFolder}/{name}/ROC_{name}_{year}.png"
-    print("Saving image: ", image_path)
-    plt.savefig(image_path, bbox_inches='tight')    
+    if saveImage:
+        image_path = f"SavedPlots/{modelFolder}/{name}/ROC_{name}_{year}.png"
+        print("Saving image: ", image_path)
+        plt.savefig(image_path, bbox_inches='tight')    
     
     plt.show()
     
