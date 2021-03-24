@@ -38,6 +38,8 @@ fp_patch_pred = mpatches.Patch(color='olivedrab', label='False Positive')
 
 
 def plotNVDIBand(input_data, name, year, modelFolder):
+    '''Make a plot of the NDVI information for a satellite image.'''
+    
     plt.figure()
     plt.imshow(input_data, cmap='RdYlGn', vmin=-1, vmax=1)
     plt.title("NDVI for " + name + " in " + str(year))
@@ -53,6 +55,8 @@ def plotNVDIBand(input_data, name, year, modelFolder):
     plt.show()
 
 def plotMangroveBand(input_data, name, year, predicted, modelFolder):
+    '''Make a plot of the mapped mangrove areas for a satellite image.'''
+    
     plt.figure()
     plt.imshow(input_data, cmap=discrete_cmap, vmin=vmin, vmax=vmax)
     if not predicted: plt.title("Labeled Mangroves for " + name + " in " + str(year))
@@ -129,6 +133,8 @@ def printClassificationMetrics(y_actual, y_predicted_prob, input_prob=0.5):
     return f1Score
 
 def makeROCPlot(y_actual, y_predicted_prob, name, year, modelFolder, saveImage=True):
+    '''Make an ROC plot from classification results.'''
+    
     fpr, tpr, thresholds = roc_curve(y_actual, y_predicted_prob)
     auc_score = auc(fpr, tpr)
 

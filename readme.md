@@ -21,6 +21,7 @@ This project was developed over three weeks as part of the [Metis](https://www.t
 ---
 
 - Python, Javascript
+- NumPy
 - Google Earth Engine
 - TensorFlow, Keras
 - Convolutional Neural Network
@@ -48,3 +49,5 @@ This project was developed over three weeks as part of the [Metis](https://www.t
 
 	- `SavedPlots/` - 
 	- `attic/` - 
+
+- `SatelliteImages/` - 

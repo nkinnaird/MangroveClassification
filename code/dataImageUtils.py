@@ -1,3 +1,5 @@
+# methods related to dealing with image data, from reading in images to predicting on them with models
+
 import numpy as np
 import plotEvalUtils as peu
 from pyrsgis import raster
@@ -20,7 +22,6 @@ def setGlobalVariables(inputBands, n_Bands):
     input_bands = inputBands
     nBands = n_Bands
     
-# define functions for use in the notebook - these should be moved to a separate file but making that work with colab is turning out to be a real headache
 
 def removeOuterEdges(x):
     '''Something is off with the top row in the satellite data, and sometimes the other edges, remove them.'''
@@ -39,7 +40,8 @@ def normalizeUInt16Band(band):
 
 
 def processImage(image):
-
+    '''Process an image and it's data for the fitWithBasicNN.ipynb notebook.'''
+    
     # read in band data
     ds_features, features = raster.read(image, bands=input_bands) # if just inputting one band, do NOT put the single number in a list to pass to "bands", it causes some issue under the hood
     ds_labels, labels = raster.read(image, bands=labels_band)
@@ -189,6 +191,7 @@ def predictOnImage(model, image):
     
 
 def processImageCNN(image, kSize, stride):
+    '''Process an image and it's data for the fitWithCNN.ipynb notebook.'''
 
     margin = math.floor(kSize/2)
 

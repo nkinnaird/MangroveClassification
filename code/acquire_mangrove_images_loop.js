@@ -1,3 +1,7 @@
+// This file should be run on Google Earth Engine. (Perhaps this can be passed to the python API but I just used the web app API.)
+// This file will load Landsat 7 satellite images, select a center for the view, composite images based on location and time, and lastly export the image to Google Drive.
+// This file is slightly different from the non-loop version, in that it loops through years and several images for each year.
+
 // load Landsat 7 Image Collection (surface reflectance)
 var l7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR');
 
